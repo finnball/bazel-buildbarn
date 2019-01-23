@@ -251,3 +251,9 @@ go_repository(
     commit = "ce511d4823dd074d7c37a74225320332d6961abb",
     importpath = "github.com/lazybeaver/xorshift",
 )
+
+go_repository(
+    name = "com_github_hanwen_go_fuse",
+    commit = "425e8d5301f6ca119f7abfe798920dbf24a396c7",
+    importpath = "github.com/hanwen/go-fuse",
+)

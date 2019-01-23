@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "content_addressable_storage_immutable_tree.go",
+        "immutable_directory_node.go",
+        "immutable_file_node.go",
+        "immutable_symlink_node.go",
+        "immutable_tree.go",
+    ],
+    importpath = "github.com/EdSchouten/bazel-buildbarn/pkg/fuse",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/blobstore:go_default_library",
+        "//pkg/cas:go_default_library",
+        "//pkg/util:go_default_library",
+        "@com_github_bazelbuild_remote_apis//build/bazel/remote/execution/v2:go_default_library",
+        "@com_github_hanwen_go_fuse//fuse:go_default_library",
+        "@com_github_hanwen_go_fuse//fuse/nodefs:go_default_library",
+    ],
+)
