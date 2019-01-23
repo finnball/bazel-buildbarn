@@ -41,9 +41,9 @@ func (n *immutableFileNode) GetAttr(out *fuse.Attr, file nodefs.File, context *f
 		mode = fuse.S_IFREG | 0555
 	}
 	*out = fuse.Attr{
+		Ino:  binary.BigEndian.Uint64(n.digest.GetHashBytes()),
 		Size: uint64(n.digest.GetSizeBytes()),
 		Mode: mode,
-		Ino:  binary.BigEndian.Uint64(n.digest.GetHashBytes()),
 	}
 	return fuse.OK
 }

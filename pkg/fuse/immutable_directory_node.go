@@ -38,6 +38,7 @@ func (n *immutableDirectoryNode) GetAttr(out *fuse.Attr, file nodefs.File, conte
 		return fuse.EIO
 	}
 	*out = fuse.Attr{
+		Ino:   binary.BigEndian.Uint64(n.digest.GetHashBytes()),
 		Size:  uint64(n.digest.GetSizeBytes()),
 		Mode:  fuse.S_IFDIR | 0555,
 		Nlink: uint32(len(d.Directories)) + 2,
@@ -57,23 +58,11 @@ func (n *immutableDirectoryNode) Lookup(out *fuse.Attr, name string, context *fu
 			if err != nil {
 				return nil, fuse.EIO
 			}
-			var mode uint32 = fuse.S_IFREG | 0444
-			if fileEntry.IsExecutable {
-				mode = fuse.S_IFREG | 0555
+			childNode := NewImmutableFileNode(n.immutableTree, childDigest, fileEntry.IsExecutable, true)
+			if s := childNode.GetAttr(out, nil, context); s != fuse.OK {
+				return nil, s
 			}
-			*out = fuse.Attr{
-				Size: uint64(childDigest.GetSizeBytes()),
-				Mode: mode,
-				Ino:  binary.BigEndian.Uint64(childDigest.GetHashBytes()),
-			}
-			return n.Inode().NewChild(
-				name,
-				false,
-				NewImmutableFileNode(
-					n.immutableTree,
-					childDigest,
-					fileEntry.IsExecutable,
-					true)), fuse.OK
+			return n.Inode().NewChild(name, false, childNode), fuse.OK
 		}
 	}
 	for _, directoryEntry := range d.Directories {
@@ -82,31 +71,20 @@ func (n *immutableDirectoryNode) Lookup(out *fuse.Attr, name string, context *fu
 			if err != nil {
 				return nil, fuse.EIO
 			}
-			*out = fuse.Attr{
-				Size: uint64(childDigest.GetSizeBytes()),
-				Mode: fuse.S_IFDIR | 0555,
+			childNode := NewImmutableDirectoryNode(n.immutableTree, childDigest, true)
+			if s := childNode.GetAttr(out, nil, context); s != fuse.OK {
+				return nil, s
 			}
-			return n.Inode().NewChild(
-				name,
-				true,
-				NewImmutableDirectoryNode(
-					n.immutableTree,
-					childDigest,
-					true)), fuse.OK
+			return n.Inode().NewChild(name, true, childNode), fuse.OK
 		}
 	}
 	for _, symlinkEntry := range d.Symlinks {
 		if name == symlinkEntry.Name {
-			*out = fuse.Attr{
-				Size: uint64(len(symlinkEntry.Target)),
-				Mode: fuse.S_IFLNK | 0777,
+			childNode := NewImmutableSymlinkNode(symlinkEntry.Target, true)
+			if s := childNode.GetAttr(out, nil, context); s != fuse.OK {
+				return nil, s
 			}
-			return n.Inode().NewChild(
-				name,
-				false,
-				NewImmutableSymlinkNode(
-					symlinkEntry.Target,
-					true)), fuse.OK
+			return n.Inode().NewChild(name, false, childNode), fuse.OK
 		}
 	}
 	return nil, fuse.ENOENT
