@@ -11,6 +11,8 @@ go_library(
         "existence_precondition_blob_access.go",
         "merkle_blob_access.go",
         "metrics_blob_access.go",
+        "random_access_blob_access.go",
+        "read_caching_blob_access.go",
         "redis_blob_access.go",
         "remote_blob_access.go",
         "s3_blob_access.go",
