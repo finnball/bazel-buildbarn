@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"io/ioutil"
 	"sync"
 
 	"github.com/EdSchouten/bazel-buildbarn/pkg/blobstore"
@@ -25,7 +26,7 @@ type OffsetStore interface {
 // length.
 type DataStore interface {
 	Put(r io.Reader, offset uint64) error
-	Get(offset uint64, size int64) io.ReadCloser
+	Get(offset uint64, size int64) io.Reader
 }
 
 // StateStore is where global metadata of the circular storage backend
@@ -50,7 +51,7 @@ type circularBlobAccess struct {
 // NewCircularBlobAccess creates a new circular storage backend. Instead
 // of writing data to storage directly, all three storage files are
 // injected through separate interfaces.
-func NewCircularBlobAccess(offsetStore OffsetStore, dataStore DataStore, stateStore StateStore) blobstore.BlobAccess {
+func NewCircularBlobAccess(offsetStore OffsetStore, dataStore DataStore, stateStore StateStore) blobstore.RandomAccessBlobAccess {
 	return &circularBlobAccess{
 		offsetStore: offsetStore,
 		dataStore:   dataStore,
@@ -66,9 +67,37 @@ func (ba *circularBlobAccess) Get(ctx context.Context, digest *util.Digest) (int
 	if err != nil {
 		return 0, nil, err
 	} else if ok {
-		return length, ba.dataStore.Get(offset, length), nil
+		return length, ioutil.NopCloser(ba.dataStore.Get(offset, length)), nil
 	}
 	return 0, nil, status.Errorf(codes.NotFound, "Blob not found")
+}
+
+func (ba *circularBlobAccess) GetAndReadAt(ctx context.Context, digest *util.Digest, b []byte, off int64) (int, error) {
+	if off < 0 {
+		return 0, status.Errorf(codes.InvalidArgument, "Cannot read at negative offset")
+	}
+
+	ba.lock.Lock()
+	defer ba.lock.Unlock()
+
+	cursors := ba.stateStore.GetCursors()
+	offset, length, ok, err := ba.offsetStore.Get(digest, cursors)
+	if err != nil {
+		return 0, err
+	} else if ok {
+		// Trim off the first part of the blob.
+		if length < off {
+			return 0, io.EOF
+		}
+		offset += uint64(off)
+		length -= off
+		n, err := io.ReadFull(ba.dataStore.Get(offset, length), b)
+		if err == io.ErrUnexpectedEOF {
+			err = io.EOF
+		}
+		return n, err
+	}
+	return 0, status.Errorf(codes.NotFound, "Blob not found")
 }
 
 func (ba *circularBlobAccess) Put(ctx context.Context, digest *util.Digest, sizeBytes int64, r io.ReadCloser) error {

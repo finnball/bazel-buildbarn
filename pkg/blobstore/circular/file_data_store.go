@@ -45,7 +45,7 @@ func (ds *fileDataStore) Put(r io.Reader, offset uint64) error {
 	}
 }
 
-func (ds *fileDataStore) Get(offset uint64, size int64) io.ReadCloser {
+func (ds *fileDataStore) Get(offset uint64, size int64) io.Reader {
 	return &fileDataStoreReader{
 		ds:     ds,
 		offset: offset,
@@ -84,8 +84,4 @@ func (f *fileDataStoreReader) Read(b []byte) (n int, err error) {
 	f.offset += readLength
 	f.size -= readLength
 	return int(readLength), nil
-}
-
-func (f *fileDataStoreReader) Close() error {
-	return nil
 }
