@@ -74,7 +74,7 @@ func (n *immutableDirectoryNode) Lookup(out *fuse.Attr, name string, context *fu
 	}
 	for _, symlinkEntry := range d.Symlinks {
 		if name == symlinkEntry.Name {
-			childNode := NewImmutableSymlinkNode(symlinkEntry.Target)
+			childNode := NewSymlinkNode(symlinkEntry.Target)
 			if s := childNode.GetAttr(out, nil, context); s != fuse.OK {
 				return nil, s
 			}
