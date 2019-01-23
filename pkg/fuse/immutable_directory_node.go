@@ -13,23 +13,17 @@ type immutableDirectoryNode struct {
 
 	immutableTree ImmutableTree
 	digest        *util.Digest
-	deletable     bool
 }
 
 // NewImmutableDirectoryNode creates a FUSE directory node that provides
 // a read-only view of a directory blob stored in a remote execution
 // Content Addressable Storage (CAS).
-func NewImmutableDirectoryNode(immutableTree ImmutableTree, digest *util.Digest, deletable bool) nodefs.Node {
+func NewImmutableDirectoryNode(immutableTree ImmutableTree, digest *util.Digest) nodefs.Node {
 	return &immutableDirectoryNode{
 		Node:          nodefs.NewDefaultNode(),
 		immutableTree: immutableTree,
 		digest:        digest,
-		deletable:     deletable,
 	}
-}
-
-func (n *immutableDirectoryNode) Deletable() bool {
-	return n.deletable
 }
 
 func (n *immutableDirectoryNode) GetAttr(out *fuse.Attr, file nodefs.File, context *fuse.Context) fuse.Status {
@@ -58,7 +52,7 @@ func (n *immutableDirectoryNode) Lookup(out *fuse.Attr, name string, context *fu
 			if err != nil {
 				return nil, fuse.EIO
 			}
-			childNode := NewImmutableFileNode(n.immutableTree, childDigest, fileEntry.IsExecutable, true)
+			childNode := NewImmutableFileNode(n.immutableTree, childDigest, fileEntry.IsExecutable)
 			if s := childNode.GetAttr(out, nil, context); s != fuse.OK {
 				return nil, s
 			}
@@ -71,7 +65,7 @@ func (n *immutableDirectoryNode) Lookup(out *fuse.Attr, name string, context *fu
 			if err != nil {
 				return nil, fuse.EIO
 			}
-			childNode := NewImmutableDirectoryNode(n.immutableTree, childDigest, true)
+			childNode := NewImmutableDirectoryNode(n.immutableTree, childDigest)
 			if s := childNode.GetAttr(out, nil, context); s != fuse.OK {
 				return nil, s
 			}
@@ -80,7 +74,7 @@ func (n *immutableDirectoryNode) Lookup(out *fuse.Attr, name string, context *fu
 	}
 	for _, symlinkEntry := range d.Symlinks {
 		if name == symlinkEntry.Name {
-			childNode := NewImmutableSymlinkNode(symlinkEntry.Target, true)
+			childNode := NewImmutableSymlinkNode(symlinkEntry.Target)
 			if s := childNode.GetAttr(out, nil, context); s != fuse.OK {
 				return nil, s
 			}

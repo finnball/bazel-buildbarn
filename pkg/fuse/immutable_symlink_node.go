@@ -8,20 +8,14 @@ import (
 type immutableSymlinkNode struct {
 	nodefs.Node
 	target    string
-	deletable bool
 }
 
 // NewImmutableSymlinkNode creates a FUSE symlink node.
-func NewImmutableSymlinkNode(target string, deletable bool) nodefs.Node {
+func NewImmutableSymlinkNode(target string) nodefs.Node {
 	return &immutableSymlinkNode{
 		Node:      nodefs.NewDefaultNode(),
 		target:    target,
-		deletable: deletable,
 	}
-}
-
-func (n *immutableSymlinkNode) Deletable() bool {
-	return n.deletable
 }
 
 func (n *immutableSymlinkNode) GetAttr(out *fuse.Attr, file nodefs.File, context *fuse.Context) fuse.Status {

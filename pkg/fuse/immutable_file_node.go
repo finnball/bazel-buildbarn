@@ -15,24 +15,18 @@ type immutableFileNode struct {
 	immutableTree ImmutableTree
 	digest        *util.Digest
 	isExecutable  bool
-	deletable     bool
 }
 
 // NewImmutableFileNode creates a FUSE file node that provides a
 // read-only view of a file blob stored in a remote execution Content
 // Addressable Storage (CAS).
-func NewImmutableFileNode(immutableTree ImmutableTree, digest *util.Digest, isExecutable bool, deletable bool) nodefs.Node {
+func NewImmutableFileNode(immutableTree ImmutableTree, digest *util.Digest, isExecutable bool) nodefs.Node {
 	return &immutableFileNode{
 		Node:          nodefs.NewDefaultNode(),
 		immutableTree: immutableTree,
 		digest:        digest,
 		isExecutable:  isExecutable,
-		deletable:     deletable,
 	}
-}
-
-func (n *immutableFileNode) Deletable() bool {
-	return n.deletable
 }
 
 func (n *immutableFileNode) GetAttr(out *fuse.Attr, file nodefs.File, context *fuse.Context) fuse.Status {
