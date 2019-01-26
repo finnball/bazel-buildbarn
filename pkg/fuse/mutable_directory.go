@@ -142,7 +142,7 @@ func (n *mutableDirectoryFUSENode) Create(name string, flags uint32, mode uint32
 	n.i.lock.Unlock()
 
 	childNode := child.GetFUSENode()
-	return nil, n.Inode().NewChild(name, false, childNode), fuse.OK
+	return NewStatelessFUSEFile(childNode, context), n.Inode().NewChild(name, false, childNode), fuse.OK
 }
 
 func (n *mutableDirectoryFUSENode) GetAttr(out *fuse.Attr, file nodefs.File, context *fuse.Context) fuse.Status {
