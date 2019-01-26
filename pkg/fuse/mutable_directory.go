@@ -278,8 +278,9 @@ func (n *mutableDirectoryFUSENode) Unlink(name string, context *fuse.Context) fu
 	if _, ok := n.i.directories[name]; ok {
 		return fuse.EPERM
 	}
-	if _, ok := n.i.leaves[name]; ok {
+	if child, ok := n.i.leaves[name]; ok {
 		delete(n.i.leaves, name)
+		child.Unlink()
 		return fuse.OK
 	}
 	return fuse.ENOENT

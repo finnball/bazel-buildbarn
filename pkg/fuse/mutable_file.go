@@ -15,12 +15,14 @@ type mutableFile struct {
 	lock         sync.Mutex
 	isExecutable bool
 	size         uint64
+	nlink        uint32
 }
 
 func NewMutableFile(file filesystem.File, isExecutable bool) Leaf {
 	return &mutableFile{
 		file:         file,
 		isExecutable: isExecutable,
+		nlink:        1,
 	}
 }
 
@@ -37,6 +39,16 @@ func (i *mutableFile) GetFUSEDirEntry() fuse.DirEntry {
 func (i *mutableFile) GetFUSENode() nodefs.Node {
 	return &mutableFileFUSENode{
 		i: i,
+	}
+}
+
+func (i *mutableFile) Unlink() {
+	i.lock.Lock()
+	defer i.lock.Unlock()
+	i.nlink--
+	// TODO(edsch): Open file descriptors should cause this to be delayed.
+	if i.nlink == 0 {
+		i.file.Close()
 	}
 }
 
@@ -90,7 +102,7 @@ func (n *mutableFileFUSENode) GetAttr(out *fuse.Attr, file nodefs.File, context 
 	*out = fuse.Attr{
 		Size:  n.i.size,
 		Mode:  mode,
-		Nlink: 123, // TODO(edsch): Set this.
+		Nlink: n.i.nlink,
 	}
 	return fuse.OK
 }
@@ -100,6 +112,9 @@ func (n *mutableFileFUSENode) Open(flags uint32, context *fuse.Context) (file no
 }
 
 func (n *mutableFileFUSENode) Read(file nodefs.File, dest []byte, off int64, context *fuse.Context) (fuse.ReadResult, fuse.Status) {
+	n.i.lock.Lock()
+	defer n.i.lock.Unlock()
+
 	nRead, err := n.i.file.ReadAt(dest, off)
 	if err != nil && err != io.EOF {
 		return nil, fuse.EIO

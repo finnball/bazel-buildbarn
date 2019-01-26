@@ -36,3 +36,6 @@ func (l *immutableFile) GetFUSEDirEntry() fuse.DirEntry {
 func (l *immutableFile) GetFUSENode() nodefs.Node {
 	return NewImmutableFileFUSENode(l.immutableTree, l.digest, l.isExecutable)
 }
+
+func (l *immutableFile) Unlink() {
+}

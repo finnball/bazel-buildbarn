@@ -8,4 +8,6 @@ import (
 type Leaf interface {
 	GetFUSEDirEntry() fuse.DirEntry
 	GetFUSENode() nodefs.Node
+
+	Unlink()
 }

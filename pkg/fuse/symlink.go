@@ -24,3 +24,6 @@ func (i *symlink) GetFUSEDirEntry() fuse.DirEntry {
 func (i *symlink) GetFUSENode() nodefs.Node {
 	return NewSymlinkFUSENode(i.target)
 }
+
+func (l *symlink) Unlink() {
+}
