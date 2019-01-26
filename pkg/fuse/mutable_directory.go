@@ -38,7 +38,7 @@ func (i *mutableDirectory) GetFUSEDirEntry() fuse.DirEntry {
 
 func (i *mutableDirectory) GetFUSENode() nodefs.Node {
 	return &mutableDirectoryFUSENode{
-		i:    i,
+		i: i,
 	}
 }
 
@@ -123,7 +123,7 @@ type mutableDirectoryFUSENode struct {
 }
 
 func (n *mutableDirectoryFUSENode) Access(mode uint32, context *fuse.Context) fuse.Status {
-	if mode &^ (fuse.R_OK|fuse.W_OK|fuse.X_OK) != 0 {
+	if mode&^(fuse.R_OK|fuse.W_OK|fuse.X_OK) != 0 {
 		return fuse.EACCES
 	}
 	return fuse.OK

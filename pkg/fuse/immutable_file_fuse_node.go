@@ -33,7 +33,7 @@ func (n *immutableFileFUSENode) Access(mode uint32, context *fuse.Context) fuse.
 	if n.isExecutable {
 		permitted |= fuse.X_OK
 	}
-	if mode &^ permitted != 0 {
+	if mode&^permitted != 0 {
 		return fuse.EACCES
 	}
 	return fuse.OK

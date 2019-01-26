@@ -19,7 +19,7 @@ func NewSymlinkFUSENode(target string) nodefs.Node {
 }
 
 func (n *symlinkFUSENode) Access(mode uint32, context *fuse.Context) fuse.Status {
-	if mode &^ (fuse.R_OK|fuse.W_OK|fuse.X_OK) != 0 {
+	if mode&^(fuse.R_OK|fuse.W_OK|fuse.X_OK) != 0 {
 		return fuse.EACCES
 	}
 	return fuse.OK

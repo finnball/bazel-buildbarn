@@ -27,7 +27,7 @@ func NewImmutableDirectoryFUSENode(immutableTree ImmutableTree, digest *util.Dig
 }
 
 func (n *immutableDirectoryFUSENode) Access(mode uint32, context *fuse.Context) fuse.Status {
-	if mode &^ (fuse.R_OK|fuse.X_OK) != 0 {
+	if mode&^(fuse.R_OK|fuse.X_OK) != 0 {
 		return fuse.EACCES
 	}
 	return fuse.OK
