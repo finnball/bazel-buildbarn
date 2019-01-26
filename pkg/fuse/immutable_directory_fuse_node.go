@@ -2,31 +2,32 @@ package fuse
 
 import (
 	"encoding/binary"
+	"sort"
 
 	"github.com/EdSchouten/bazel-buildbarn/pkg/util"
 	"github.com/hanwen/go-fuse/fuse"
 	"github.com/hanwen/go-fuse/fuse/nodefs"
 )
 
-type immutableDirectoryNode struct {
+type immutableDirectoryFUSENode struct {
 	nodefs.Node
 
 	immutableTree ImmutableTree
 	digest        *util.Digest
 }
 
-// NewImmutableDirectoryNode creates a FUSE directory node that provides
+// NewImmutableDirectoryFUSENode creates a FUSE directory node that provides
 // a read-only view of a directory blob stored in a remote execution
 // Content Addressable Storage (CAS).
-func NewImmutableDirectoryNode(immutableTree ImmutableTree, digest *util.Digest) nodefs.Node {
-	return &immutableDirectoryNode{
+func NewImmutableDirectoryFUSENode(immutableTree ImmutableTree, digest *util.Digest) nodefs.Node {
+	return &immutableDirectoryFUSENode{
 		Node:          nodefs.NewDefaultNode(),
 		immutableTree: immutableTree,
 		digest:        digest,
 	}
 }
 
-func (n *immutableDirectoryNode) GetAttr(out *fuse.Attr, file nodefs.File, context *fuse.Context) fuse.Status {
+func (n *immutableDirectoryFUSENode) GetAttr(out *fuse.Attr, file nodefs.File, context *fuse.Context) fuse.Status {
 	d, err := n.immutableTree.GetDirectory(n.digest)
 	if err != nil {
 		return fuse.EIO
@@ -40,7 +41,7 @@ func (n *immutableDirectoryNode) GetAttr(out *fuse.Attr, file nodefs.File, conte
 	return fuse.OK
 }
 
-func (n *immutableDirectoryNode) Lookup(out *fuse.Attr, name string, context *fuse.Context) (*nodefs.Inode, fuse.Status) {
+func (n *immutableDirectoryFUSENode) Lookup(out *fuse.Attr, name string, context *fuse.Context) (*nodefs.Inode, fuse.Status) {
 	d, err := n.immutableTree.GetDirectory(n.digest)
 	if err != nil {
 		return nil, fuse.EIO
@@ -52,7 +53,7 @@ func (n *immutableDirectoryNode) Lookup(out *fuse.Attr, name string, context *fu
 			if err != nil {
 				return nil, fuse.EIO
 			}
-			childNode := NewImmutableFileNode(n.immutableTree, childDigest, fileEntry.IsExecutable)
+			childNode := NewImmutableFileFUSENode(n.immutableTree, childDigest, fileEntry.IsExecutable)
 			if s := childNode.GetAttr(out, nil, context); s != fuse.OK {
 				return nil, s
 			}
@@ -65,7 +66,7 @@ func (n *immutableDirectoryNode) Lookup(out *fuse.Attr, name string, context *fu
 			if err != nil {
 				return nil, fuse.EIO
 			}
-			childNode := NewImmutableDirectoryNode(n.immutableTree, childDigest)
+			childNode := NewImmutableDirectoryFUSENode(n.immutableTree, childDigest)
 			if s := childNode.GetAttr(out, nil, context); s != fuse.OK {
 				return nil, s
 			}
@@ -74,7 +75,7 @@ func (n *immutableDirectoryNode) Lookup(out *fuse.Attr, name string, context *fu
 	}
 	for _, symlinkEntry := range d.Symlinks {
 		if name == symlinkEntry.Name {
-			childNode := NewSymlinkNode(symlinkEntry.Target)
+			childNode := NewSymlinkFUSENode(symlinkEntry.Target)
 			if s := childNode.GetAttr(out, nil, context); s != fuse.OK {
 				return nil, s
 			}
@@ -84,13 +85,13 @@ func (n *immutableDirectoryNode) Lookup(out *fuse.Attr, name string, context *fu
 	return nil, fuse.ENOENT
 }
 
-func (n *immutableDirectoryNode) OpenDir(context *fuse.Context) ([]fuse.DirEntry, fuse.Status) {
+func (n *immutableDirectoryFUSENode) OpenDir(context *fuse.Context) ([]fuse.DirEntry, fuse.Status) {
 	d, err := n.immutableTree.GetDirectory(n.digest)
 	if err != nil {
 		return nil, fuse.EIO
 	}
 
-	var entries []fuse.DirEntry
+	var entries dirEntryList
 	for _, fileEntry := range d.Files {
 		childDigest, err := n.digest.NewDerivedDigest(fileEntry.Digest)
 		if err != nil {
@@ -121,5 +122,6 @@ func (n *immutableDirectoryNode) OpenDir(context *fuse.Context) ([]fuse.DirEntry
 			Name: symlinkEntry.Name,
 		})
 	}
+	sort.Sort(entries)
 	return entries, fuse.OK
 }

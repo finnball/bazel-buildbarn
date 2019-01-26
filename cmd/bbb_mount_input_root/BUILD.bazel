@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["main.go"],
+    importpath = "github.com/EdSchouten/bazel-buildbarn/cmd/bbb_mount_input_root",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//pkg/blobstore:go_default_library",
+        "//pkg/blobstore/circular:go_default_library",
+        "//pkg/blobstore/configuration:go_default_library",
+        "//pkg/cas:go_default_library",
+        "//pkg/filesystem:go_default_library",
+        "//pkg/fuse:go_default_library",
+        "//pkg/util:go_default_library",
+        "@com_github_bazelbuild_remote_apis//build/bazel/remote/execution/v2:go_default_library",
+        "@com_github_hanwen_go_fuse//fuse/nodefs:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "bbb_mount_input_root",
+    embed = [":go_default_library"],
+    pure = "on",
+    visibility = ["//visibility:public"],
+)

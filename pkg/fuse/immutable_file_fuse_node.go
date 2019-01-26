@@ -9,7 +9,7 @@ import (
 	"github.com/hanwen/go-fuse/fuse/nodefs"
 )
 
-type immutableFileNode struct {
+type immutableFileFUSENode struct {
 	nodefs.Node
 
 	immutableTree ImmutableTree
@@ -17,11 +17,11 @@ type immutableFileNode struct {
 	isExecutable  bool
 }
 
-// NewImmutableFileNode creates a FUSE file node that provides a
+// NewImmutableFileFUSENode creates a FUSE file node that provides a
 // read-only view of a file blob stored in a remote execution Content
 // Addressable Storage (CAS).
-func NewImmutableFileNode(immutableTree ImmutableTree, digest *util.Digest, isExecutable bool) nodefs.Node {
-	return &immutableFileNode{
+func NewImmutableFileFUSENode(immutableTree ImmutableTree, digest *util.Digest, isExecutable bool) nodefs.Node {
+	return &immutableFileFUSENode{
 		Node:          nodefs.NewDefaultNode(),
 		immutableTree: immutableTree,
 		digest:        digest,
@@ -29,7 +29,7 @@ func NewImmutableFileNode(immutableTree ImmutableTree, digest *util.Digest, isEx
 	}
 }
 
-func (n *immutableFileNode) GetAttr(out *fuse.Attr, file nodefs.File, context *fuse.Context) fuse.Status {
+func (n *immutableFileFUSENode) GetAttr(out *fuse.Attr, file nodefs.File, context *fuse.Context) fuse.Status {
 	var mode uint32 = fuse.S_IFREG | 0444
 	if n.isExecutable {
 		mode = fuse.S_IFREG | 0555
@@ -42,11 +42,11 @@ func (n *immutableFileNode) GetAttr(out *fuse.Attr, file nodefs.File, context *f
 	return fuse.OK
 }
 
-func (n *immutableFileNode) Open(flags uint32, context *fuse.Context) (file nodefs.File, code fuse.Status) {
+func (n *immutableFileFUSENode) Open(flags uint32, context *fuse.Context) (file nodefs.File, code fuse.Status) {
 	return nil, fuse.OK
 }
 
-func (n *immutableFileNode) Read(file nodefs.File, dest []byte, off int64, context *fuse.Context) (fuse.ReadResult, fuse.Status) {
+func (n *immutableFileFUSENode) Read(file nodefs.File, dest []byte, off int64, context *fuse.Context) (fuse.ReadResult, fuse.Status) {
 	nRead, err := n.immutableTree.ReadFileAt(n.digest, dest, off)
 	if err != nil && err != io.EOF {
 		return nil, fuse.EIO

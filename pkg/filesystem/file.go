@@ -13,4 +13,6 @@ type File interface {
 	io.Seeker
 	io.Writer
 	io.WriterAt
+
+	Truncate(size int64) error
 }

@@ -254,6 +254,7 @@ go_repository(
 
 go_repository(
     name = "com_github_hanwen_go_fuse",
-    commit = "425e8d5301f6ca119f7abfe798920dbf24a396c7",
+    commit = "dfd0ceb206ca58277d145a4bc3a5e054b3ac20d1",
     importpath = "github.com/hanwen/go-fuse",
+    patches = ["//:patches/com_github_hanwen_go_fuse/create-nil-file.diff"],
 )
