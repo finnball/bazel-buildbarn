@@ -38,7 +38,6 @@ func (i *mutableDirectory) GetFUSEDirEntry() fuse.DirEntry {
 
 func (i *mutableDirectory) GetFUSENode() nodefs.Node {
 	return &mutableDirectoryFUSENode{
-		Node: nodefs.NewDefaultNode(),
 		i:    i,
 	}
 }
@@ -99,8 +98,9 @@ func (i *mutableDirectory) MergeImmutableTree(immutableTree ImmutableTree, diges
 			}
 		} else if _, ok = i.leaves[directoryEntry.Name]; ok {
 			return status.Errorf(codes.AlreadyExists, "A leaf node with name %#v already exists", directoryEntry.Name)
+		} else {
+			i.directories[directoryEntry.Name] = NewImmutableDirectory(immutableTree, childDigest)
 		}
-		i.directories[directoryEntry.Name] = NewImmutableDirectory(immutableTree, childDigest)
 	}
 
 	for _, symlinkEntry := range d.Symlinks {
@@ -117,9 +117,20 @@ func (i *mutableDirectory) MergeImmutableTree(immutableTree ImmutableTree, diges
 }
 
 type mutableDirectoryFUSENode struct {
-	nodefs.Node
+	directoryFUSENode
 
 	i *mutableDirectory
+}
+
+func (n *mutableDirectoryFUSENode) Access(mode uint32, context *fuse.Context) fuse.Status {
+	if mode &^ (fuse.R_OK|fuse.W_OK|fuse.X_OK) != 0 {
+		return fuse.EACCES
+	}
+	return fuse.OK
+}
+
+func (n *mutableDirectoryFUSENode) Chmod(file nodefs.File, perms uint32, context *fuse.Context) fuse.Status {
+	return fuse.OK
 }
 
 func (n *mutableDirectoryFUSENode) Create(name string, flags uint32, mode uint32, context *fuse.Context) (nodefs.File, *nodefs.Inode, fuse.Status) {

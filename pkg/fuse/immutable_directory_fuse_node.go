@@ -10,7 +10,7 @@ import (
 )
 
 type immutableDirectoryFUSENode struct {
-	nodefs.Node
+	directoryFUSENode
 
 	immutableTree ImmutableTree
 	digest        *util.Digest
@@ -21,10 +21,24 @@ type immutableDirectoryFUSENode struct {
 // Content Addressable Storage (CAS).
 func NewImmutableDirectoryFUSENode(immutableTree ImmutableTree, digest *util.Digest) nodefs.Node {
 	return &immutableDirectoryFUSENode{
-		Node:          nodefs.NewDefaultNode(),
 		immutableTree: immutableTree,
 		digest:        digest,
 	}
+}
+
+func (n *immutableDirectoryFUSENode) Access(mode uint32, context *fuse.Context) fuse.Status {
+	if mode &^ (fuse.R_OK|fuse.X_OK) != 0 {
+		return fuse.EACCES
+	}
+	return fuse.OK
+}
+
+func (n *immutableDirectoryFUSENode) Chmod(file nodefs.File, perms uint32, context *fuse.Context) fuse.Status {
+	return fuse.EPERM
+}
+
+func (n *immutableDirectoryFUSENode) Create(name string, flags uint32, mode uint32, context *fuse.Context) (nodefs.File, *nodefs.Inode, fuse.Status) {
+	return nil, nil, fuse.EACCES
 }
 
 func (n *immutableDirectoryFUSENode) GetAttr(out *fuse.Attr, file nodefs.File, context *fuse.Context) fuse.Status {
@@ -39,6 +53,10 @@ func (n *immutableDirectoryFUSENode) GetAttr(out *fuse.Attr, file nodefs.File, c
 		Nlink: uint32(len(d.Directories)) + 2,
 	}
 	return fuse.OK
+}
+
+func (n *immutableDirectoryFUSENode) Link(name string, existing nodefs.Node, context *fuse.Context) (*nodefs.Inode, fuse.Status) {
+	return nil, fuse.EACCES
 }
 
 func (n *immutableDirectoryFUSENode) Lookup(out *fuse.Attr, name string, context *fuse.Context) (*nodefs.Inode, fuse.Status) {
@@ -85,6 +103,10 @@ func (n *immutableDirectoryFUSENode) Lookup(out *fuse.Attr, name string, context
 	return nil, fuse.ENOENT
 }
 
+func (n *immutableDirectoryFUSENode) Mkdir(name string, mode uint32, context *fuse.Context) (*nodefs.Inode, fuse.Status) {
+	return nil, fuse.EACCES
+}
+
 func (n *immutableDirectoryFUSENode) OpenDir(context *fuse.Context) ([]fuse.DirEntry, fuse.Status) {
 	d, err := n.immutableTree.GetDirectory(n.digest)
 	if err != nil {
@@ -102,7 +124,7 @@ func (n *immutableDirectoryFUSENode) OpenDir(context *fuse.Context) ([]fuse.DirE
 		// place.
 		var mode uint32 = fuse.S_IFREG | 0444
 		if fileEntry.IsExecutable {
-			mode = fuse.S_IFREG | 0555
+			mode |= 0111
 		}
 		entries = append(entries, fuse.DirEntry{
 			Mode: mode,
@@ -124,4 +146,20 @@ func (n *immutableDirectoryFUSENode) OpenDir(context *fuse.Context) ([]fuse.DirE
 	}
 	sort.Sort(entries)
 	return entries, fuse.OK
+}
+
+func (n *immutableDirectoryFUSENode) Rename(oldName string, newParent nodefs.Node, newName string, context *fuse.Context) fuse.Status {
+	return fuse.EACCES
+}
+
+func (n *immutableDirectoryFUSENode) Rmdir(name string, context *fuse.Context) fuse.Status {
+	return fuse.EACCES
+}
+
+func (n *immutableDirectoryFUSENode) Symlink(name string, content string, context *fuse.Context) (*nodefs.Inode, fuse.Status) {
+	return nil, fuse.EACCES
+}
+
+func (n *immutableDirectoryFUSENode) Unlink(name string, context *fuse.Context) fuse.Status {
+	return fuse.EACCES
 }

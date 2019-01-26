@@ -25,7 +25,7 @@ func NewImmutableFile(immutableTree ImmutableTree, digest *util.Digest, isExecut
 func (l *immutableFile) GetFUSEDirEntry() fuse.DirEntry {
 	var mode uint32 = fuse.S_IFREG | 0444
 	if l.isExecutable {
-		mode = fuse.S_IFREG | 0555
+		mode |= 0111
 	}
 	return fuse.DirEntry{
 		Mode: mode,

@@ -110,6 +110,9 @@ func main() {
 	mutableTree := fuse.NewDirectoryBackedMutableTree(dataDir)
 	root := fuse.NewMutableDirectory(mutableTree)
 	root.GetOrCreateDirectory("bazel-out")
+	if root.GetOrCreateDirectory("packages"); err != nil {
+		log.Fatal("Failed create packages directory: ", err)
+	}
 	if err := root.MergeImmutableTree(immutableTree, digest); err != nil {
 		log.Fatal("Failed merge immutable tree: ", err)
 	}
