@@ -231,9 +231,48 @@ func (n *mutableDirectoryFUSENode) OpenDir(context *fuse.Context) ([]fuse.DirEnt
 	return entries, fuse.OK
 }
 
-func (n *mutableDirectoryFUSENode) Rename(oldName string, newParent nodefs.Node, newName string, context *fuse.Context) fuse.Status {
-	// TODO(edsch): Implement!
-	return fuse.ENOSYS
+func (nOld *mutableDirectoryFUSENode) Rename(oldName string, newParent nodefs.Node, newName string, context *fuse.Context) fuse.Status {
+	nNew, ok := newParent.(*mutableDirectoryFUSENode)
+	if !ok {
+		return fuse.EXDEV
+	}
+
+	util.LockMutexPair(&nOld.i.lock, &nNew.i.lock)
+	defer util.UnlockMutexPair(&nOld.i.lock, &nNew.i.lock)
+
+	// Renaming a directory.
+	if child, ok := nOld.i.directories[oldName]; ok {
+		if _, ok = nNew.i.leaves[newName]; ok {
+			return fuse.ENOTDIR
+		}
+		delete(nOld.i.directories, oldName)
+		if existingChild, ok := nNew.i.directories[newName]; ok {
+			if isEmpty, err := existingChild.IsEmpty(); err != nil {
+				nOld.i.directories[oldName] = child
+				return fuse.EIO
+			} else if !isEmpty {
+				nOld.i.directories[oldName] = child
+				return fuse.Status(syscall.ENOTEMPTY)
+			}
+		}
+		nNew.i.directories[newName] = child
+		return fuse.OK
+	}
+
+	// Renaming a file or symlink.
+	if child, ok := nOld.i.leaves[oldName]; ok {
+		if _, ok := nNew.i.directories[newName]; ok {
+			return fuse.EISDIR
+		}
+		delete(nOld.i.leaves, oldName)
+		if existingChild, ok := nNew.i.leaves[newName]; ok {
+			existingChild.Unlink()
+		}
+		nNew.i.leaves[newName] = child
+		return fuse.OK
+	}
+
+	return fuse.ENOENT
 }
 
 func (n *mutableDirectoryFUSENode) Rmdir(name string, context *fuse.Context) fuse.Status {

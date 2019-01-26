@@ -5,6 +5,7 @@ go_library(
     srcs = [
         "digest.go",
         "flag.go",
+        "mutex.go",
         "status.go",
     ],
     importpath = "github.com/EdSchouten/bazel-buildbarn/pkg/util",
