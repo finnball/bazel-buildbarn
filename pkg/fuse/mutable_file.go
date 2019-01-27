@@ -36,7 +36,7 @@ func (i *mutableFile) GetFUSEDirEntry() fuse.DirEntry {
 	}
 }
 
-func (i *mutableFile) GetFUSENode() nodefs.Node {
+func (i *mutableFile) GetFUSENode() FUSENode {
 	return &mutableFileFUSENode{
 		i: i,
 	}
@@ -105,6 +105,14 @@ func (n *mutableFileFUSENode) GetAttr(out *fuse.Attr, file nodefs.File, context 
 		Nlink: n.i.nlink,
 	}
 	return fuse.OK
+}
+
+func (n *mutableFileFUSENode) LinkNode() (Leaf, fuse.Status) {
+	n.i.lock.Lock()
+	defer n.i.lock.Unlock()
+
+	n.i.nlink++
+	return n.i, fuse.OK
 }
 
 func (n *mutableFileFUSENode) Open(flags uint32, context *fuse.Context) (file nodefs.File, code fuse.Status) {

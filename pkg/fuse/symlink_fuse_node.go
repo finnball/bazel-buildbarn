@@ -12,7 +12,7 @@ type symlinkFUSENode struct {
 }
 
 // NewSymlinkFUSENode creates a FUSE symlink node.
-func NewSymlinkFUSENode(target string) nodefs.Node {
+func NewSymlinkFUSENode(target string) FUSENode {
 	return &symlinkFUSENode{
 		target: target,
 	}
@@ -39,6 +39,11 @@ func (n *symlinkFUSENode) GetAttr(out *fuse.Attr, file nodefs.File, context *fus
 		Mode: fuse.S_IFLNK | 0777,
 	}
 	return fuse.OK
+}
+
+func (n *symlinkFUSENode) LinkNode() (Leaf, fuse.Status) {
+	// TODO(edsch): This is copying, instead of linking. Is this valid?
+	return NewSymlink(n.target), fuse.OK
 }
 
 func (n *symlinkFUSENode) Open(flags uint32, context *fuse.Context) (nodefs.File, fuse.Status) {

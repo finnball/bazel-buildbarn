@@ -19,7 +19,7 @@ type immutableDirectoryFUSENode struct {
 // NewImmutableDirectoryFUSENode creates a FUSE directory node that provides
 // a read-only view of a directory blob stored in a remote execution
 // Content Addressable Storage (CAS).
-func NewImmutableDirectoryFUSENode(immutableTree ImmutableTree, digest *util.Digest) nodefs.Node {
+func NewImmutableDirectoryFUSENode(immutableTree ImmutableTree, digest *util.Digest) FUSENode {
 	return &immutableDirectoryFUSENode{
 		immutableTree: immutableTree,
 		digest:        digest,
@@ -57,6 +57,10 @@ func (n *immutableDirectoryFUSENode) GetAttr(out *fuse.Attr, file nodefs.File, c
 
 func (n *immutableDirectoryFUSENode) Link(name string, existing nodefs.Node, context *fuse.Context) (*nodefs.Inode, fuse.Status) {
 	return nil, fuse.EACCES
+}
+
+func (n *immutableDirectoryFUSENode) LinkNode() (Leaf, fuse.Status) {
+	return nil, fuse.EPERM
 }
 
 func (n *immutableDirectoryFUSENode) Lookup(out *fuse.Attr, name string, context *fuse.Context) (*nodefs.Inode, fuse.Status) {

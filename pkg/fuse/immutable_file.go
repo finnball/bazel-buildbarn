@@ -5,7 +5,6 @@ import (
 
 	"github.com/EdSchouten/bazel-buildbarn/pkg/util"
 	"github.com/hanwen/go-fuse/fuse"
-	"github.com/hanwen/go-fuse/fuse/nodefs"
 )
 
 type immutableFile struct {
@@ -33,7 +32,7 @@ func (l *immutableFile) GetFUSEDirEntry() fuse.DirEntry {
 	}
 }
 
-func (l *immutableFile) GetFUSENode() nodefs.Node {
+func (l *immutableFile) GetFUSENode() FUSENode {
 	return NewImmutableFileFUSENode(l.immutableTree, l.digest, l.isExecutable)
 }
 

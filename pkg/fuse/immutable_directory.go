@@ -3,7 +3,6 @@ package fuse
 import (
 	"github.com/EdSchouten/bazel-buildbarn/pkg/util"
 	"github.com/hanwen/go-fuse/fuse"
-	"github.com/hanwen/go-fuse/fuse/nodefs"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -27,7 +26,7 @@ func (d *immutableDirectory) GetFUSEDirEntry() fuse.DirEntry {
 	}
 }
 
-func (d *immutableDirectory) GetFUSENode() nodefs.Node {
+func (d *immutableDirectory) GetFUSENode() FUSENode {
 	return NewImmutableDirectoryFUSENode(d.immutableTree, d.digest)
 }
 

@@ -2,7 +2,6 @@ package fuse
 
 import (
 	"github.com/hanwen/go-fuse/fuse"
-	"github.com/hanwen/go-fuse/fuse/nodefs"
 )
 
 type symlink struct {
@@ -21,7 +20,7 @@ func (i *symlink) GetFUSEDirEntry() fuse.DirEntry {
 	}
 }
 
-func (i *symlink) GetFUSENode() nodefs.Node {
+func (i *symlink) GetFUSENode() FUSENode {
 	return NewSymlinkFUSENode(i.target)
 }
 

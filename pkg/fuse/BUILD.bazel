@@ -9,6 +9,7 @@ go_library(
         "directory.go",
         "directory_backed_mutable_tree.go",
         "directory_fuse_node.go",
+        "fuse_node.go",
         "immutable_directory.go",
         "immutable_directory_fuse_node.go",
         "immutable_file.go",

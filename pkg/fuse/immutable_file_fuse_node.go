@@ -20,7 +20,7 @@ type immutableFileFUSENode struct {
 // NewImmutableFileFUSENode creates a FUSE file node that provides a
 // read-only view of a file blob stored in a remote execution Content
 // Addressable Storage (CAS).
-func NewImmutableFileFUSENode(immutableTree ImmutableTree, digest *util.Digest, isExecutable bool) nodefs.Node {
+func NewImmutableFileFUSENode(immutableTree ImmutableTree, digest *util.Digest, isExecutable bool) FUSENode {
 	return &immutableFileFUSENode{
 		immutableTree: immutableTree,
 		digest:        digest,
@@ -58,6 +58,11 @@ func (n *immutableFileFUSENode) GetAttr(out *fuse.Attr, file nodefs.File, contex
 		Mode: mode,
 	}
 	return fuse.OK
+}
+
+func (n *immutableFileFUSENode) LinkNode() (Leaf, fuse.Status) {
+	// TODO(edsch): This is copying, instead of linking. Is this valid?
+	return NewImmutableFile(n.immutableTree, n.digest, n.isExecutable), fuse.OK
 }
 
 func (n *immutableFileFUSENode) Open(flags uint32, context *fuse.Context) (file nodefs.File, code fuse.Status) {
