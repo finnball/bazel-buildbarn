@@ -32,15 +32,15 @@ func NewMutableDirectory(mutableTree MutableTree) Directory {
 }
 
 func (i *mutableDirectory) attachDirectory(name string, child Directory) {
-	if i.existsDirectory(name) {
-		log.Fatalf("Attempted to overwrite directory %#v", name)
+	if i.existsDirectory(name) || i.existsLeaf(name) {
+		log.Fatalf("Attempted to overwrite node %#v", name)
 	}
 	i.directories[name] = child
 }
 
 func (i *mutableDirectory) attachLeaf(name string, child Leaf) {
-	if i.existsLeaf(name) {
-		log.Fatalf("Attempted to overwrite leaf %#v", name)
+	if i.existsDirectory(name) || i.existsLeaf(name) {
+		log.Fatalf("Attempted to overwrite node %#v", name)
 	}
 	i.leaves[name] = child
 }
