@@ -98,11 +98,8 @@ func (i *mutableDirectory) MergeImmutableTree(immutableTree ImmutableTree, diges
 	defer i.lock.Unlock()
 
 	for _, fileEntry := range d.Files {
-		if i.existsDirectory(fileEntry.Name) {
-			return status.Errorf(codes.AlreadyExists, "A directory node with name %#v already exists", fileEntry.Name)
-		}
-		if i.existsLeaf(fileEntry.Name) {
-			return status.Errorf(codes.AlreadyExists, "A leaf node with name %#v already exists", fileEntry.Name)
+		if i.existsDirectory(fileEntry.Name) || i.existsLeaf(fileEntry.Name) {
+			return status.Errorf(codes.AlreadyExists, "A node with name %#v already exists", fileEntry.Name)
 		}
 		childDigest, err := digest.NewDerivedDigest(fileEntry.Digest)
 		if err != nil {
@@ -121,18 +118,15 @@ func (i *mutableDirectory) MergeImmutableTree(immutableTree ImmutableTree, diges
 				return err
 			}
 		} else if i.existsLeaf(directoryEntry.Name) {
-			return status.Errorf(codes.AlreadyExists, "A leaf node with name %#v already exists", directoryEntry.Name)
+			return status.Errorf(codes.AlreadyExists, "A node with name %#v already exists", directoryEntry.Name)
 		} else {
 			i.attachDirectory(directoryEntry.Name, NewImmutableDirectory(immutableTree, childDigest))
 		}
 	}
 
 	for _, symlinkEntry := range d.Symlinks {
-		if i.existsDirectory(symlinkEntry.Name) {
-			return status.Errorf(codes.AlreadyExists, "A directory node with name %#v already exists", symlinkEntry.Name)
-		}
-		if i.existsLeaf(symlinkEntry.Name) {
-			return status.Errorf(codes.AlreadyExists, "A leaf node with name %#v already exists", symlinkEntry.Name)
+		if i.existsDirectory(symlinkEntry.Name) || i.existsLeaf(symlinkEntry.Name) {
+			return status.Errorf(codes.AlreadyExists, "A node with name %#v already exists", symlinkEntry.Name)
 		}
 		i.attachLeaf(symlinkEntry.Name, NewSymlink(symlinkEntry.Target))
 	}
