@@ -220,10 +220,6 @@ func (n *mutableDirectoryFUSENode) Link(name string, existing nodefs.Node, conte
 	return existing.Inode(), fuse.OK
 }
 
-func (n *mutableDirectoryFUSENode) LinkNode() (Leaf, fuse.Status) {
-	return nil, fuse.EPERM
-}
-
 func (n *mutableDirectoryFUSENode) Lookup(out *fuse.Attr, name string, context *fuse.Context) (*nodefs.Inode, fuse.Status) {
 	n.i.lock.Lock()
 	if child, ok := n.i.directories[name]; ok {

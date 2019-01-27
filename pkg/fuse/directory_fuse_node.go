@@ -13,6 +13,10 @@ func (n *directoryFUSENode) Fallocate(file nodefs.File, off uint64, size uint64,
 	return fuse.ENOSYS
 }
 
+func (n *directoryFUSENode) LinkNode() (Leaf, fuse.Status) {
+	return nil, fuse.EPERM
+}
+
 func (n *directoryFUSENode) Open(flags uint32, context *fuse.Context) (nodefs.File, fuse.Status) {
 	return nil, fuse.EISDIR
 }

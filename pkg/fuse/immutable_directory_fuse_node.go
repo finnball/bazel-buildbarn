@@ -69,10 +69,6 @@ func (n *immutableDirectoryFUSENode) Link(name string, existing nodefs.Node, con
 	return nil, fuse.EACCES
 }
 
-func (n *immutableDirectoryFUSENode) LinkNode() (Leaf, fuse.Status) {
-	return nil, fuse.EPERM
-}
-
 func (n *immutableDirectoryFUSENode) Lookup(out *fuse.Attr, name string, context *fuse.Context) (*nodefs.Inode, fuse.Status) {
 	d, err := n.immutableTree.GetDirectory(n.digest)
 	if err != nil {
