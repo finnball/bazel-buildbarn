@@ -107,6 +107,10 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to open directory for mutable tree: ", err)
 	}
+	if err := dataDir.RemoveAllChildren(); err != nil {
+		log.Fatal("Failed to empty out directory for mutable tree: ", err)
+	}
+
 	mutableTree := fuse.NewDirectoryBackedMutableTree(dataDir)
 	root := fuse.NewMutableDirectory(mutableTree)
 	root.GetOrCreateDirectory("bazel-out")
