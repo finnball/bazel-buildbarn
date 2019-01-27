@@ -3,6 +3,7 @@ package fuse
 import (
 	"encoding/binary"
 	"sort"
+	"sync/atomic"
 
 	"github.com/EdSchouten/bazel-buildbarn/pkg/util"
 	"github.com/hanwen/go-fuse/fuse"
@@ -14,6 +15,8 @@ type immutableDirectoryFUSENode struct {
 
 	immutableTree ImmutableTree
 	digest        *util.Digest
+
+	nlink uint32
 }
 
 // NewImmutableDirectoryFUSENode creates a FUSE directory node that provides
@@ -42,15 +45,22 @@ func (n *immutableDirectoryFUSENode) Create(name string, flags uint32, mode uint
 }
 
 func (n *immutableDirectoryFUSENode) GetAttr(out *fuse.Attr, file nodefs.File, context *fuse.Context) fuse.Status {
-	d, err := n.immutableTree.GetDirectory(n.digest)
-	if err != nil {
-		return fuse.EIO
+	// Keep the link count cached to speed up future GetAttr() calls.
+	nlink := atomic.LoadUint32(&n.nlink)
+	if nlink == 0 {
+		d, err := n.immutableTree.GetDirectory(n.digest)
+		if err != nil {
+			return fuse.EIO
+		}
+		nlink = uint32(len(d.Directories)) + 2
+		atomic.StoreUint32(&n.nlink, nlink)
 	}
+
 	*out = fuse.Attr{
 		Ino:   binary.BigEndian.Uint64(n.digest.GetHashBytes()),
 		Size:  uint64(n.digest.GetSizeBytes()),
 		Mode:  fuse.S_IFDIR | 0555,
-		Nlink: uint32(len(d.Directories)) + 2,
+		Nlink: nlink,
 	}
 	return fuse.OK
 }
