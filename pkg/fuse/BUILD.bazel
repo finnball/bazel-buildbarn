@@ -20,6 +20,7 @@ go_library(
         "mutable_directory.go",
         "mutable_file.go",
         "mutable_tree.go",
+        "random_access_file.go",
         "stateless_fuse_file.go",
         "symlink.go",
         "symlink_fuse_node.go",

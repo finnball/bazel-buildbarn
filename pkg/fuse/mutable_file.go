@@ -4,13 +4,12 @@ import (
 	"io"
 	"sync"
 
-	"github.com/EdSchouten/bazel-buildbarn/pkg/filesystem"
 	"github.com/hanwen/go-fuse/fuse"
 	"github.com/hanwen/go-fuse/fuse/nodefs"
 )
 
 type mutableFile struct {
-	file filesystem.File
+	file RandomAccessFile
 
 	lock         sync.Mutex
 	isExecutable bool
@@ -18,7 +17,7 @@ type mutableFile struct {
 	nlink        uint32
 }
 
-func NewMutableFile(file filesystem.File, isExecutable bool) Leaf {
+func NewMutableFile(file RandomAccessFile, isExecutable bool) Leaf {
 	return &mutableFile{
 		file:         file,
 		isExecutable: isExecutable,
