@@ -11,10 +11,11 @@ import (
 type mutableFile struct {
 	file RandomAccessFile
 
-	lock         sync.Mutex
-	isExecutable bool
-	size         uint64
-	nlink        uint32
+	lock            sync.Mutex
+	isExecutable    bool
+	size            uint64
+	nlink           uint32
+	openDescriptors uint
 }
 
 func NewMutableFile(file RandomAccessFile, isExecutable bool) Leaf {
@@ -44,9 +45,9 @@ func (i *mutableFile) GetFUSENode() FUSENode {
 func (i *mutableFile) Unlink() {
 	i.lock.Lock()
 	defer i.lock.Unlock()
+
 	i.nlink--
-	// TODO(edsch): Open file descriptors should cause this to be delayed.
-	if i.nlink == 0 {
+	if i.nlink == 0 && i.openDescriptors == 0 {
 		i.file.Close()
 	}
 }
@@ -115,7 +116,14 @@ func (n *mutableFileFUSENode) LinkNode() (Leaf, fuse.Status) {
 }
 
 func (n *mutableFileFUSENode) Open(flags uint32, context *fuse.Context) (file nodefs.File, code fuse.Status) {
-	return nil, fuse.OK
+	n.i.lock.Lock()
+	defer n.i.lock.Unlock()
+
+	n.i.openDescriptors++
+	return &mutableFileFUSEFile{
+		File: NewStatelessFUSEFile(n, context),
+		i:    n.i,
+	}, fuse.OK
 }
 
 func (n *mutableFileFUSENode) Read(file nodefs.File, dest []byte, off int64, context *fuse.Context) (fuse.ReadResult, fuse.Status) {
@@ -156,4 +164,20 @@ func (n *mutableFileFUSENode) Write(file nodefs.File, data []byte, off int64, co
 		return uint32(nWritten), fuse.EIO
 	}
 	return uint32(nWritten), fuse.OK
+}
+
+type mutableFileFUSEFile struct {
+	nodefs.File
+
+	i *mutableFile
+}
+
+func (f *mutableFileFUSEFile) Release() {
+	f.i.lock.Lock()
+	defer f.i.lock.Unlock()
+
+	f.i.openDescriptors--
+	if f.i.nlink == 0 && f.i.openDescriptors == 0 {
+		f.i.file.Close()
+	}
 }

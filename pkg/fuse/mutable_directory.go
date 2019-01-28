@@ -185,7 +185,11 @@ func (n *mutableDirectoryFUSENode) Create(name string, flags uint32, mode uint32
 	n.i.lock.Unlock()
 
 	childNode := child.GetFUSENode()
-	return NewStatelessFUSEFile(childNode, context), n.Inode().NewChild(name, false, childNode), fuse.OK
+	f, s := childNode.Open(flags, context)
+	if s != fuse.OK {
+		return nil, nil, s
+	}
+	return f, n.Inode().NewChild(name, false, childNode), fuse.OK
 }
 
 func (n *mutableDirectoryFUSENode) GetAttr(out *fuse.Attr, file nodefs.File, context *fuse.Context) fuse.Status {
@@ -222,9 +226,10 @@ func (n *mutableDirectoryFUSENode) Link(name string, existing nodefs.Node, conte
 
 func (n *mutableDirectoryFUSENode) Lookup(out *fuse.Attr, name string, context *fuse.Context) (*nodefs.Inode, fuse.Status) {
 	n.i.lock.Lock()
+	defer n.i.lock.Unlock()
+
 	if child, ok := n.i.directories[name]; ok {
 		childNode := child.GetFUSENode()
-		n.i.lock.Unlock()
 		if s := childNode.GetAttr(out, nil, context); s != fuse.OK {
 			return nil, s
 		}
@@ -232,13 +237,11 @@ func (n *mutableDirectoryFUSENode) Lookup(out *fuse.Attr, name string, context *
 	}
 	if child, ok := n.i.leaves[name]; ok {
 		childNode := child.GetFUSENode()
-		n.i.lock.Unlock()
 		if s := childNode.GetAttr(out, nil, context); s != fuse.OK {
 			return nil, s
 		}
 		return n.Inode().NewChild(name, false, childNode), fuse.OK
 	}
-	n.i.lock.Unlock()
 	return nil, fuse.ENOENT
 }
 
