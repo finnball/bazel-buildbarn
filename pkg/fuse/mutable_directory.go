@@ -197,8 +197,9 @@ func (n *mutableDirectoryFUSENode) GetAttr(out *fuse.Attr, file nodefs.File, con
 	nDirectories := len(n.i.directories)
 	n.i.lock.Unlock()
 	*out = fuse.Attr{
-		Mode:  fuse.S_IFDIR | 0777,
-		Nlink: uint32(nDirectories) + 2,
+		Mode:    fuse.S_IFDIR | 0777,
+		Nlink:   uint32(nDirectories) + 2,
+		Blksize: defaultBlockSize,
 	}
 	return fuse.OK
 }

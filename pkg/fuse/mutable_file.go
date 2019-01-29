@@ -100,9 +100,11 @@ func (n *mutableFileFUSENode) GetAttr(out *fuse.Attr, file nodefs.File, context 
 		mode |= 0111
 	}
 	*out = fuse.Attr{
-		Size:  n.i.size,
-		Mode:  mode,
-		Nlink: n.i.nlink,
+		Size:    n.i.size,
+		Blocks:  toBlockSize(n.i.size),
+		Mode:    mode,
+		Nlink:   n.i.nlink,
+		Blksize: defaultBlockSize,
 	}
 	return fuse.OK
 }

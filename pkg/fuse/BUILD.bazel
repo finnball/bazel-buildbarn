@@ -3,6 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "go_default_library",
     srcs = [
+        "block_size.go",
         "content_addressable_storage_immutable_tree.go",
         "default_fuse_node.go",
         "dir_entry_list.go",

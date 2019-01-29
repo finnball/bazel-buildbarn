@@ -57,10 +57,12 @@ func (n *immutableDirectoryFUSENode) GetAttr(out *fuse.Attr, file nodefs.File, c
 	}
 
 	*out = fuse.Attr{
-		Ino:   binary.BigEndian.Uint64(n.digest.GetHashBytes()),
-		Size:  uint64(n.digest.GetSizeBytes()),
-		Mode:  fuse.S_IFDIR | 0555,
-		Nlink: nlink,
+		Ino:     binary.BigEndian.Uint64(n.digest.GetHashBytes()),
+		Size:    uint64(n.digest.GetSizeBytes()),
+		Blocks:  toBlockSize(uint64(n.digest.GetSizeBytes())),
+		Mode:    fuse.S_IFDIR | 0555,
+		Nlink:   nlink,
+		Blksize: defaultBlockSize,
 	}
 	return fuse.OK
 }

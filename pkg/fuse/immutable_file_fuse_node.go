@@ -53,9 +53,11 @@ func (n *immutableFileFUSENode) GetAttr(out *fuse.Attr, file nodefs.File, contex
 		mode |= 0111
 	}
 	*out = fuse.Attr{
-		Ino:  binary.BigEndian.Uint64(n.digest.GetHashBytes()),
-		Size: uint64(n.digest.GetSizeBytes()),
-		Mode: mode,
+		Ino:     binary.BigEndian.Uint64(n.digest.GetHashBytes()),
+		Size:    uint64(n.digest.GetSizeBytes()),
+		Blocks:  toBlockSize(uint64(n.digest.GetSizeBytes())),
+		Mode:    mode,
+		Blksize: defaultBlockSize,
 	}
 	return fuse.OK
 }

@@ -35,8 +35,10 @@ func (n *symlinkFUSENode) Fallocate(file nodefs.File, off uint64, size uint64, m
 
 func (n *symlinkFUSENode) GetAttr(out *fuse.Attr, file nodefs.File, context *fuse.Context) fuse.Status {
 	*out = fuse.Attr{
-		Size: uint64(len(n.target)),
-		Mode: fuse.S_IFLNK | 0777,
+		Size:    uint64(len(n.target)),
+		Blocks:  toBlockSize(uint64(len(n.target))),
+		Mode:    fuse.S_IFLNK | 0777,
+		Blksize: defaultBlockSize,
 	}
 	return fuse.OK
 }
